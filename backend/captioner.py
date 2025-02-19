@@ -1,11 +1,10 @@
 import os
 from groq import Groq
-import srt
+# import srt
 import datetime
 from moviepy import *
-# import moviepy.editor as mp
 from moviepy.video.tools.subtitles import SubtitlesClip
-# from moviepy.editor import VideoFileClip
+from moviepy.video.io.VideoFileClip import VideoFileClip
 
 client = Groq(api_key="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")
 
@@ -42,6 +41,7 @@ def transcribe_audio(mp3_file):
         # Print the transcription text
         # print(transcription.text)
         # print(transcription)
+        print(transcription.segments)
         return transcription.segments
 
     # model = whisper.load_model("small")  # Use 'tiny', 'base', 'small', 'medium', or 'large'
@@ -62,23 +62,60 @@ def convert_to_srt(segments, srt_path):
 
 # Step 3: Add Subtitles to Video
 def add_subtitles(video_path, srt_path, output_path):
+    generator = lambda text: TextClip(text, font='Roboto_Condensed-Bold.otf', font_size=24, color='white')
+    # subs = SubtitlesClip(srt_path, generator)
+    subtitles = SubtitlesClip("subtitles.srt", make_textclip=generator, encoding='utf-8')
+    print("got here")
     video = VideoFileClip(video_path)
-    generator = lambda txt: TextClip(txt, fontsize=24, color='white', bg_color='black')
+    print("got here2")
+
+    result = CompositeVideoClip([video, subtitles.set_pos(('center','bottom'))])
+    print("got here3")
+
+    result.write_videofile(output_path, fps=video.fps)
+    # video = mp.VideoFileClip(video_path)
+    # generator = lambda txt: mp.TextClip(txt, fontsize=24, color='white', bg_color='black')
     
-    subtitles = SubtitlesClip(srt_path, generator)
-    final_video = CompositeVideoClip([video, subtitles.set_position(("center", "bottom"))])
+    # subtitles = SubtitlesClip(srt_path, generator)
+    # final_video = mp.CompositeVideoClip([video, subtitles.set_position(("center", "bottom"))])
     
-    final_video.write_videofile(output_path, codec="libx264", fps=video.fps)
+    # final_video.write_videofile(output_path, codec="libx264", fps=video.fps)
+
+def add_subtitles2(verbose_json, fontsize):
+    text_clips = []
+
+    for segment in verbose_json:
+        text_clips.append(
+            TextClip(text=segment["text"],
+                     font_size=fontsize,
+                     stroke_width=5, 
+                     stroke_color="white", 
+                     font="./Roboto-Condensed-Bold.otf",
+                     color="white")
+            .with_start(segment["start"]) # changed from set_start to "with"
+            .with_end(segment["end"])   
+            .with_position("center")
+        )
+    return text_clips
 
 # Run the Process
 video_file = "../input.mp4"
-srt_file = "../subtitles.srt"
+srt_file = "subtitles.srt"
 output_file = "output_with_subtitles.mp4"
 
 mp3_file = "../output.mp3"
 convert_mp4_to_mp3(video_file)
 segments = transcribe_audio(mp3_file)
-convert_to_srt(segments, srt_file)
-add_subtitles(video_file, srt_file, output_file)
+text_clip_list = add_subtitles2(segments, fontsize=90)
 
+# convert_to_srt(segments, srt_file)
+# add_subtitles(video_file, srt_file, output_file)
+
+# Loading the video as a VideoFileClip
+original_clip = VideoFileClip(video_file)
+
+# Create a CompositeVideoClip that we write to a file
+final_clip = CompositeVideoClip([original_clip] + text_clip_list)
+
+final_clip.write_videofile("final.mp4", codec="libx264")
 print("Subtitled video saved as:", output_file)
