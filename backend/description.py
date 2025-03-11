@@ -5,8 +5,7 @@ Description and hashtag for the posts.
 import os
 from groq import Groq
 
-client = Groq(api_key="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")
-
+client = Groq()
 
 def convert_mp4_to_mp3(mp4_filepath):
     """

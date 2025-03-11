@@ -1,15 +1,16 @@
 import os
 from groq import Groq
-# import srt
 import datetime
 from moviepy import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
+import time
 
-client = Groq(api_key="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")
+GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+client = Groq(api_key=GROQ_API_KEY)
 
 
-def convert_mp4_to_mp3(mp4_filepath):
+def convert_mp4_to_mp3(mp4_filepath, mp3_file):
     """
     Converts an MP4 file to MP3.
 
@@ -33,7 +34,7 @@ def transcribe_audio(mp3_file):
         transcription = client.audio.transcriptions.create(
             file=(mp3_file, file.read()), # Required audio file
             model="whisper-large-v3-turbo", # Required model to use for transcription
-            # prompt="Specify context or spelling",  # Optional
+            timestamp_granularities=["word"],
             response_format="verbose_json",  # Optional
             language="en",  # Optional
             temperature=0.0  # Optional
@@ -41,57 +42,30 @@ def transcribe_audio(mp3_file):
         # Print the transcription text
         # print(transcription.text)
         # print(transcription)
-        print(transcription.segments)
-        return transcription.segments
+        print(transcription.words)
+        # time.sleep(3)
+        return transcription.words
 
     # model = whisper.load_model("small")  # Use 'tiny', 'base', 'small', 'medium', or 'large'
     # result = model.transcribe(video_path)
     # return result["segments"]
 
-# Step 2: Convert to SRT Format
-def convert_to_srt(segments, srt_path):
-    subs = []
-    for seg in segments:
-        start = datetime.timedelta(seconds=seg["start"])
-        end = datetime.timedelta(seconds=seg["end"])
-        subs.append(srt.Subtitle(index=seg["id"], start=start, end=end, content=seg["text"]))
-        print(start, end, "\n")
-
-    with open(srt_path, "w", encoding="utf-8") as f:
-        f.write(srt.compose(subs))
-
-# Step 3: Add Subtitles to Video
-def add_subtitles(video_path, srt_path, output_path):
-    generator = lambda text: TextClip(text, font='Roboto_Condensed-Bold.otf', font_size=24, color='white')
-    # subs = SubtitlesClip(srt_path, generator)
-    subtitles = SubtitlesClip("subtitles.srt", make_textclip=generator, encoding='utf-8')
-    print("got here")
-    video = VideoFileClip(video_path)
-    print("got here2")
-
-    result = CompositeVideoClip([video, subtitles.set_pos(('center','bottom'))])
-    print("got here3")
-
-    result.write_videofile(output_path, fps=video.fps)
-    # video = mp.VideoFileClip(video_path)
-    # generator = lambda txt: mp.TextClip(txt, fontsize=24, color='white', bg_color='black')
-    
-    # subtitles = SubtitlesClip(srt_path, generator)
-    # final_video = mp.CompositeVideoClip([video, subtitles.set_position(("center", "bottom"))])
-    
-    # final_video.write_videofile(output_path, codec="libx264", fps=video.fps)
-
-def add_subtitles2(verbose_json, fontsize):
+def add_subtitles2(verbose_json, width, fontsize):
     text_clips = []
 
     for segment in verbose_json:
         text_clips.append(
-            TextClip(text=segment["text"],
+            TextClip(text=segment["word"],
                      font_size=fontsize,
                      stroke_width=5, 
-                     stroke_color="white", 
+                     stroke_color="black", 
                      font="./Roboto-Condensed-Bold.otf",
-                     color="white")
+                     color="white",
+                     size=(width, None),
+                     method="caption",
+                     text_align="center",
+                     margin=(30, 0)
+                     )
             .with_start(segment["start"]) # changed from set_start to "with"
             .with_end(segment["end"])   
             .with_position("center")
@@ -100,19 +74,17 @@ def add_subtitles2(verbose_json, fontsize):
 
 # Run the Process
 video_file = "../input.mp4"
-srt_file = "subtitles.srt"
 output_file = "output_with_subtitles.mp4"
-
-mp3_file = "../output.mp3"
-convert_mp4_to_mp3(video_file)
-segments = transcribe_audio(mp3_file)
-text_clip_list = add_subtitles2(segments, fontsize=90)
-
-# convert_to_srt(segments, srt_file)
-# add_subtitles(video_file, srt_file, output_file)
 
 # Loading the video as a VideoFileClip
 original_clip = VideoFileClip(video_file)
+width = original_clip.w
+print(width)
+
+mp3_file = "../output.mp3"
+convert_mp4_to_mp3(video_file, mp3_file)
+segments = transcribe_audio(mp3_file)
+text_clip_list = add_subtitles2(segments, width, fontsize=40)
 
 # Create a CompositeVideoClip that we write to a file
 final_clip = CompositeVideoClip([original_clip] + text_clip_list)
