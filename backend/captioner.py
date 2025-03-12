@@ -4,7 +4,6 @@ import datetime
 from moviepy import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
-import time
 
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
@@ -21,7 +20,7 @@ def convert_mp4_to_mp3(mp4_filepath, mp3_file):
     video_clip = VideoFileClip(mp4_filepath)
 
     # Extract audio from video
-    video_clip.audio.write_audiofile("../output.mp3")
+    video_clip.audio.write_audiofile(mp3_file)
     print("now is an mp3")
     video_clip.close()
 
@@ -40,17 +39,10 @@ def transcribe_audio(mp3_file):
             temperature=0.0  # Optional
         )
         # Print the transcription text
-        # print(transcription.text)
-        # print(transcription)
         print(transcription.words)
-        # time.sleep(3)
         return transcription.words
 
-    # model = whisper.load_model("small")  # Use 'tiny', 'base', 'small', 'medium', or 'large'
-    # result = model.transcribe(video_path)
-    # return result["segments"]
-
-def add_subtitles2(verbose_json, width, fontsize):
+def add_subtitles(verbose_json, width, fontsize):
     text_clips = []
 
     for segment in verbose_json:
@@ -66,7 +58,7 @@ def add_subtitles2(verbose_json, width, fontsize):
                      text_align="center",
                      margin=(30, 0)
                      )
-            .with_start(segment["start"]) # changed from set_start to "with"
+            .with_start(segment["start"])
             .with_end(segment["end"])   
             .with_position("center")
         )
@@ -84,7 +76,7 @@ print(width)
 mp3_file = "../output.mp3"
 convert_mp4_to_mp3(video_file, mp3_file)
 segments = transcribe_audio(mp3_file)
-text_clip_list = add_subtitles2(segments, width, fontsize=40)
+text_clip_list = add_subtitles(segments, width, fontsize=40)
 
 # Create a CompositeVideoClip that we write to a file
 final_clip = CompositeVideoClip([original_clip] + text_clip_list)
