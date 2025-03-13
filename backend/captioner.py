@@ -4,6 +4,8 @@ import datetime
 from moviepy import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from dotenv import load_dotenv
+load_dotenv()  
 
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
