@@ -1,13 +1,29 @@
-# Auto captioner for instagram reels
+# Auto captioner for Instagram reels
 
-The step by step tutorial is in the subtitler-tutorial.ipynb file
+<video controls src="whispertimestamp.mp4" title="Example Video"></video>
 
-## Set up
-python3 -m venv venv
+The step by step tutorial & code walkthrough can be found in the [subtitler-tutorial.ipynb](subtitler-tutorial.ipynb) file
 
-source venv/bin/activate
 
-pip3 install groq moviepy pysrt
+## Quick Set up
+
+Go into the backend subfolder
+
+`cd instagram-reels-subtitles/backend`
+
+Make a virtual python environment
+
+```python3 -m venv venv```
+
+Use the venv
+
+`source venv/bin/activate`
+
+Install the necessary packages
+
+`pip3 install groq moviepy pysrt`
 
 ## How to run it
-python3 captioner.py
+Run this command in your terminal
+
+`python3 captioner.py`
