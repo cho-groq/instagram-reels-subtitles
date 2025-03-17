@@ -83,5 +83,5 @@ text_clip_list = add_subtitles(segments, width, fontsize=40)
 # Create a CompositeVideoClip that we write to a file
 final_clip = CompositeVideoClip([original_clip] + text_clip_list)
 
-final_clip.write_videofile("final.mp4", codec="libx264")
+final_clip.write_videofile("final.mp4", codec="libx264") # Mac users may want to add this within the parentheses: ,audio_codec="aac"
 print("Subtitled video saved as:", output_file)
